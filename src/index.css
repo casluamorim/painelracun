@@ -4,6 +4,8 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
+
 /* Portal de Resultados - Design System
    Clean, corporate, modern dashboard aesthetic
 */
@@ -19,10 +21,10 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 50%;
+    --primary: 233 81% 10%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 20% 95%;
+    --secondary: 311 100% 50%;
     --secondary-foreground: 222 47% 11%;
 
     --muted: 215 20% 94%;
