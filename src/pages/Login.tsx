@@ -4,32 +4,66 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BarChart3, ArrowLeft, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { BarChart3, ArrowLeft, Loader2, AlertCircle, Eye, EyeOff, CheckCircle } from 'lucide-react';
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const {
-    login,
-    isLoading
-  } = useAuth();
+  const { login, signup, isLoading } = useAuth();
+  
+  const [isSignupMode, setIsSignupMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+
     if (!email || !password) {
       setError('Por favor, preencha todos os campos.');
       return;
     }
-    const success = await login(email, password);
-    if (success) {
-      navigate('/dashboard');
+
+    if (isSignupMode && !name) {
+      setError('Por favor, informe seu nome.');
+      return;
+    }
+
+    if (isSignupMode) {
+      const result = await signup(email, password, name);
+      if (result.success) {
+        if (result.error) {
+          // Email confirmation required
+          setSuccess(result.error);
+          setIsSignupMode(false);
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        setError(result.error || 'Erro ao criar conta.');
+      }
     } else {
-      setError('E-mail ou senha incorretos. Tente novamente.');
+      const result = await login(email, password);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error || 'E-mail ou senha incorretos.');
+      }
     }
   };
-  return <div className="min-h-screen bg-background flex">
+
+  const toggleMode = () => {
+    setIsSignupMode(!isSignupMode);
+    setError('');
+    setSuccess('');
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex">
       {/* Left Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
@@ -44,52 +78,108 @@ const Login: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Racun Analytics</h1>
-              <p className="text-sm text-muted-foreground">Faça login para acessar seu painel</p>
+              <p className="text-sm text-muted-foreground">
+                {isSignupMode ? 'Crie sua conta para começar' : 'Faça login para acessar seu painel'}
+              </p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {error && <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                 <AlertCircle size={16} />
                 {error}
-              </div>}
+              </div>
+            )}
+
+            {success && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 text-primary text-sm">
+                <CheckCircle size={16} />
+                {success}
+              </div>
+            )}
+
+            {isSignupMode && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome completo</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Seu nome"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  disabled={isLoading}
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" disabled={isLoading} />
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                disabled={isLoading}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" disabled={isLoading} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={isSignupMode ? 'new-password' : 'current-password'}
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-end">
-              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                Esqueci minha senha
-              </Link>
-            </div>
+            {!isSignupMode && (
+              <div className="flex items-center justify-end">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  Esqueci minha senha
+                </Link>
+              </div>
+            )}
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? <>
+              {isLoading ? (
+                <>
                   <Loader2 size={18} className="mr-2 animate-spin" />
-                  Entrando...
-                </> : 'Entrar'}
+                  {isSignupMode ? 'Criando conta...' : 'Entrando...'}
+                </>
+              ) : (
+                isSignupMode ? 'Criar conta' : 'Entrar'
+              )}
             </Button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm font-medium text-foreground mb-2">🔐 Credenciais de demonstração:</p>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              <p><strong>Cliente:</strong> cliente@empresa.com / cliente123</p>
-              <p><strong>Admin:</strong> admin@portal.com / admin123</p>
-            </div>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              {isSignupMode ? 'Já tem uma conta?' : 'Não tem uma conta?'}{' '}
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="text-primary hover:underline font-medium"
+              >
+                {isSignupMode ? 'Fazer login' : 'Criar conta'}
+              </button>
+            </p>
           </div>
         </div>
       </div>
@@ -108,6 +198,8 @@ const Login: React.FC = () => {
           </p>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Login;
