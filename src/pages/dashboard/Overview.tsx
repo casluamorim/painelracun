@@ -5,6 +5,8 @@ import { SpendChart } from '@/components/dashboard/SpendChart';
 import { PlatformChart } from '@/components/dashboard/PlatformChart';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { InsightsCard, defaultInsights } from '@/components/dashboard/InsightsCard';
+import { QuickSummary } from '@/components/dashboard/QuickSummary';
+import { PlatformROASCard, mockPlatformROAS } from '@/components/dashboard/PlatformROASCard';
 import {
   mockCampaigns,
   mockDailyMetrics,
@@ -27,6 +29,10 @@ import {
 
 const Overview: React.FC = () => {
   const totals = getTotals();
+  
+  // Calcular ROAS total
+  const totalRevenue = mockPlatformROAS.reduce((acc, p) => acc + p.revenue, 0);
+  const overallRoas = totalRevenue / totals.spend;
 
   return (
     <div className="space-y-6">
@@ -41,7 +47,16 @@ const Overview: React.FC = () => {
         <PeriodFilter />
       </div>
 
-      {/* Top Metrics */}
+      {/* Quick Summary - Visão Resumida */}
+      <QuickSummary
+        totalSpend={totals.spend}
+        totalRevenue={totalRevenue}
+        totalConversions={totals.conversions}
+        overallRoas={overallRoas}
+      />
+
+      {/* ROAS por Plataforma */}
+      <PlatformROASCard data={mockPlatformROAS} />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Investimento Total"
