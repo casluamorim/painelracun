@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaigns: {
+        Row: {
+          budget: number | null
+          client_id: string
+          created_at: string
+          end_date: string | null
+          id: string
+          name: string
+          platform: Database["public"]["Enums"]["ad_platform"]
+          start_date: string
+          status: Database["public"]["Enums"]["campaign_status"]
+          updated_at: string
+        }
+        Insert: {
+          budget?: number | null
+          client_id: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          platform: Database["public"]["Enums"]["ad_platform"]
+          start_date: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Update: {
+          budget?: number | null
+          client_id?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          platform?: Database["public"]["Enums"]["ad_platform"]
+          start_date?: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string
@@ -40,6 +87,119 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      daily_metrics: {
+        Row: {
+          campaign_id: string
+          clicks: number
+          client_id: string
+          conversions: number
+          created_at: string
+          date: string
+          id: string
+          impressions: number
+          leads: number
+          revenue: number
+          spend: number
+        }
+        Insert: {
+          campaign_id: string
+          clicks?: number
+          client_id: string
+          conversions?: number
+          created_at?: string
+          date: string
+          id?: string
+          impressions?: number
+          leads?: number
+          revenue?: number
+          spend?: number
+        }
+        Update: {
+          campaign_id?: string
+          clicks?: number
+          client_id?: string
+          conversions?: number
+          created_at?: string
+          date?: string
+          id?: string
+          impressions?: number
+          leads?: number
+          revenue?: number
+          spend?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_metrics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_metrics_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_summary: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          platform: Database["public"]["Enums"]["ad_platform"]
+          total_clicks: number
+          total_conversions: number
+          total_impressions: number
+          total_leads: number
+          total_revenue: number
+          total_spend: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          platform: Database["public"]["Enums"]["ad_platform"]
+          total_clicks?: number
+          total_conversions?: number
+          total_impressions?: number
+          total_leads?: number
+          total_revenue?: number
+          total_spend?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          platform?: Database["public"]["Enums"]["ad_platform"]
+          total_clicks?: number
+          total_conversions?: number
+          total_impressions?: number
+          total_leads?: number
+          total_revenue?: number
+          total_spend?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_summary_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -112,7 +272,9 @@ export type Database = {
       }
     }
     Enums: {
+      ad_platform: "meta" | "google" | "tiktok"
       app_role: "admin" | "client"
+      campaign_status: "active" | "paused" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -240,7 +402,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ad_platform: ["meta", "google", "tiktok"],
       app_role: ["admin", "client"],
+      campaign_status: ["active", "paused", "completed"],
     },
   },
 } as const
