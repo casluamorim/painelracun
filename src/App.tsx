@@ -17,6 +17,13 @@ import TikTokAds from "./pages/dashboard/TikTokAds";
 import Reports from "./pages/dashboard/Reports";
 import Settings from "./pages/dashboard/Settings";
 import NotFound from "./pages/NotFound";
+
+// Admin Pages
+import Clients from "./pages/admin/Clients";
+import Campaigns from "./pages/admin/Campaigns";
+import ImportMetrics from "./pages/admin/ImportMetrics";
+import Users from "./pages/admin/Users";
+
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -38,6 +45,25 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Admin Route component - only for admin users
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;
@@ -81,6 +107,12 @@ const AppRoutes = () => {
         <Route path="tiktok" element={<TikTokAds />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        
+        {/* Admin Routes - nested under dashboard */}
+        <Route path="admin/clients" element={<AdminRoute><Clients /></AdminRoute>} />
+        <Route path="admin/campaigns" element={<AdminRoute><Campaigns /></AdminRoute>} />
+        <Route path="admin/import" element={<AdminRoute><ImportMetrics /></AdminRoute>} />
+        <Route path="admin/users" element={<AdminRoute><Users /></AdminRoute>} />
       </Route>
       
       {/* Catch-all */}

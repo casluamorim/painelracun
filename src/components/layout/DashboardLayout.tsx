@@ -1,7 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, BarChart3, FileText, Settings, LogOut, Menu, X, ChevronRight, RefreshCw } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  BarChart3, 
+  FileText, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  X, 
+  ChevronRight, 
+  RefreshCw,
+  Building2,
+  Megaphone,
+  Upload,
+  Users
+} from 'lucide-react';
 import { MetaIcon, GoogleIcon, TikTokIcon } from '@/components/icons/PlatformIcons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -19,6 +33,13 @@ const mainNavItems: NavItem[] = [
   { label: 'Google Ads', href: '/dashboard/google', icon: <GoogleIcon size={20} /> },
   { label: 'TikTok Ads', href: '/dashboard/tiktok', icon: <TikTokIcon size={20} className="text-[hsl(180,76%,48%)]" /> },
   { label: 'Relatórios', href: '/dashboard/reports', icon: <FileText size={20} /> },
+];
+
+const adminNavItems: NavItem[] = [
+  { label: 'Clientes', href: '/dashboard/admin/clients', icon: <Building2 size={20} /> },
+  { label: 'Campanhas', href: '/dashboard/admin/campaigns', icon: <Megaphone size={20} /> },
+  { label: 'Importar Métricas', href: '/dashboard/admin/import', icon: <Upload size={20} /> },
+  { label: 'Usuários', href: '/dashboard/admin/users', icon: <Users size={20} /> },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -100,7 +121,7 @@ export const DashboardLayout: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {mainNavItems.map((item) => (
             <Link
               key={item.href}
@@ -118,6 +139,34 @@ export const DashboardLayout: React.FC = () => {
               {isActive(item.href) && <ChevronRight size={16} className="ml-auto text-primary" />}
             </Link>
           ))}
+
+          {/* Admin Section */}
+          {user?.role === 'admin' && (
+            <>
+              <div className="pt-4 pb-2 px-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Administração
+                </span>
+              </div>
+              {adminNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                    isActive(item.href)
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                  {isActive(item.href) && <ChevronRight size={16} className="ml-auto text-primary" />}
+                </Link>
+              ))}
+            </>
+          )}
         </nav>
 
         {/* Bottom Navigation */}
