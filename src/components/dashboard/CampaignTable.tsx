@@ -8,10 +8,31 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Campaign, formatCurrency, formatNumber, getPlatformName } from '@/lib/mockData';
+import { formatCurrency, formatNumber, getPlatformName, Platform } from '@/lib/mockData';
 import { getPlatformIcon } from '@/components/icons/PlatformIcons';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+type CampaignStatus = 'active' | 'paused';
+
+interface Campaign {
+  id: string;
+  platform: Platform;
+  name: string;
+  startDate: string;
+  endDate: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  cpc: number;
+  cpm: number;
+  conversions?: number;
+  leads?: number;
+  cpa?: number;
+  cpl?: number;
+  status: CampaignStatus;
+}
 
 interface CampaignTableProps {
   campaigns: Campaign[];
