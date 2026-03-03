@@ -1,7 +1,7 @@
 import React from 'react';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { CampaignTable } from '@/components/dashboard/CampaignTable';
-import { SpendChart } from '@/components/dashboard/SpendChart';
+import { DailyMetricsChart } from '@/components/dashboard/DailyMetricsChart';
 import { PlatformChart } from '@/components/dashboard/PlatformChart';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { InsightsCard, defaultInsights } from '@/components/dashboard/InsightsCard';
@@ -217,10 +217,7 @@ const Overview: React.FC = () => {
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-6">
-        <SpendChart
-          currentData={dailyMetrics || []}
-          previousData={[]}
-        />
+        <DailyMetricsChart data={dailyMetrics || []} />
         <PlatformChart data={chartData} metric="spend" />
       </div>
 
