@@ -16,6 +16,7 @@ import GoogleAds from "./pages/dashboard/GoogleAds";
 import TikTokAds from "./pages/dashboard/TikTokAds";
 import Reports from "./pages/dashboard/Reports";
 import Settings from "./pages/dashboard/Settings";
+import Integrations from "./pages/dashboard/Integrations";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -107,6 +108,7 @@ const AppRoutes = () => {
         <Route path="tiktok" element={<TikTokAds />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="integrations" element={<AdminRoute><Integrations /></AdminRoute>} />
         
         {/* Admin Routes - nested under dashboard */}
         <Route path="admin/clients" element={<AdminRoute><Clients /></AdminRoute>} />
