@@ -14,7 +14,8 @@ import {
   Building2,
   Megaphone,
   Upload,
-  Users
+  Users,
+  Plug
 } from 'lucide-react';
 import { MetaIcon, GoogleIcon, TikTokIcon } from '@/components/icons/PlatformIcons';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Campanhas', href: '/dashboard/admin/campaigns', icon: <Megaphone size={20} /> },
   { label: 'Importar Métricas', href: '/dashboard/admin/import', icon: <Upload size={20} /> },
   { label: 'Usuários', href: '/dashboard/admin/users', icon: <Users size={20} /> },
+  { label: 'Integrações', href: '/dashboard/integrations', icon: <Plug size={20} /> },
 ];
 
 const bottomNavItems: NavItem[] = [
