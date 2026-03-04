@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -8,47 +8,73 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  Legend,
 } from 'recharts';
-import { PlatformSummary, formatCurrency, formatNumber, getPlatformName } from '@/lib/mockData';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatCurrency, formatNumber, getPlatformName, Platform } from '@/lib/mockData';
+
+type MetricKey = 'spend' | 'impressions' | 'clicks' | 'conversions' | 'leads';
+
+interface PlatformData {
+  platform: Platform;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  leads: number;
+}
 
 interface PlatformChartProps {
-  data: PlatformSummary[];
-  metric?: 'spend' | 'conversions' | 'clicks';
+  data: PlatformData[];
+  metric?: MetricKey;
   title?: string;
 }
 
 const platformColors: Record<string, string> = {
   meta: 'hsl(214, 100%, 45%)',
-  google: 'hsl(217, 89%, 61%)',
+  google: 'hsl(45, 93%, 47%)',
   tiktok: 'hsl(180, 76%, 48%)',
+};
+
+const metricConfig: Record<MetricKey, { label: string; formatter: (v: number) => string }> = {
+  spend: { label: 'Investimento', formatter: (v) => formatCurrency(v) },
+  impressions: { label: 'Impressões', formatter: (v) => formatNumber(v) },
+  clicks: { label: 'Cliques', formatter: (v) => formatNumber(v) },
+  conversions: { label: 'Conversões', formatter: (v) => formatNumber(v) },
+  leads: { label: 'Leads', formatter: (v) => formatNumber(v) },
 };
 
 export const PlatformChart: React.FC<PlatformChartProps> = ({
   data,
-  metric = 'spend',
-  title = 'Resultados por Plataforma',
+  metric: initialMetric = 'spend',
+  title = 'Comparativo por Plataforma',
 }) => {
+  const [activeMetric, setActiveMetric] = useState<MetricKey>(initialMetric);
+  const config = metricConfig[activeMetric];
+
   const chartData = data.map((item) => ({
     platform: getPlatformName(item.platform),
-    value: item[metric],
-    color: platformColors[item.platform],
+    value: item[activeMetric],
+    color: platformColors[item.platform] || 'hsl(var(--primary))',
     rawPlatform: item.platform,
   }));
 
-  const formatValue = (value: number) => {
-    if (metric === 'spend') return formatCurrency(value);
-    return formatNumber(value);
+  const yFormatter = (value: number) => {
+    if (activeMetric === 'spend') return `R$${(value / 1000).toFixed(0)}k`;
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
+    return String(value);
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
+    if (active && payload?.length) {
+      const d = payload[0].payload;
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-elevated">
-          <p className="text-sm font-medium text-foreground">{data.platform}</p>
+          <p className="text-sm font-medium text-foreground">{d.platform}</p>
           <p className="text-sm text-muted-foreground">
-            {metric === 'spend' ? 'Investimento' : metric === 'conversions' ? 'Conversões' : 'Cliques'}:{' '}
-            <span className="font-medium text-foreground">{formatValue(data.value)}</span>
+            {config.label}:{' '}
+            <span className="font-medium text-foreground">{config.formatter(d.value)}</span>
           </p>
         </div>
       );
@@ -58,29 +84,37 @@ export const PlatformChart: React.FC<PlatformChartProps> = ({
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
-      <h3 className="text-lg font-semibold text-foreground mb-6">{title}</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+        <Tabs value={activeMetric} onValueChange={(v) => setActiveMetric(v as MetricKey)}>
+          <TabsList className="grid grid-cols-5">
+            <TabsTrigger value="spend" className="text-xs">Invest.</TabsTrigger>
+            <TabsTrigger value="impressions" className="text-xs">Impr.</TabsTrigger>
+            <TabsTrigger value="clicks" className="text-xs">Cliques</TabsTrigger>
+            <TabsTrigger value="conversions" className="text-xs">Conv.</TabsTrigger>
+            <TabsTrigger value="leads" className="text-xs">Leads</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={true} vertical={false} />
+          <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis
-              type="number"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+              dataKey="platform"
+              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }}
               tickLine={false}
               axisLine={{ stroke: 'hsl(var(--border))' }}
-              tickFormatter={(value) => metric === 'spend' ? `R$${(value / 1000).toFixed(0)}k` : formatNumber(value)}
             />
             <YAxis
-              type="category"
-              dataKey="platform"
               tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
               tickLine={false}
               axisLine={{ stroke: 'hsl(var(--border))' }}
-              width={80}
+              tickFormatter={yFormatter}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
+            <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={48}>
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
@@ -93,10 +127,7 @@ export const PlatformChart: React.FC<PlatformChartProps> = ({
       <div className="flex flex-wrap justify-center gap-4 mt-4">
         {chartData.map((item) => (
           <div key={item.rawPlatform} className="flex items-center gap-2">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
             <span className="text-sm text-muted-foreground">{item.platform}</span>
           </div>
         ))}
