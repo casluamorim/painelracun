@@ -10,8 +10,10 @@ interface UserProfile {
   name: string;
   email: string;
   clientId: string | null;
+  clientIds: string[];
   role: AppRole;
   clientName?: string;
+  clientNames?: string[];
 }
 
 interface AuthContextType {
@@ -57,16 +59,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('Error fetching role:', roleError);
       }
 
-      // Fetch client name if client_id exists
+      // Fetch assigned clients from user_clients
+      const { data: userClientsData } = await supabase
+        .from('user_clients')
+        .select('client_id')
+        .eq('user_id', supabaseUser.id);
+
+      const clientIds = (userClientsData || []).map(uc => uc.client_id);
+
+      // Fetch client names
       let clientName: string | undefined;
-      if (profile.client_id) {
-        const { data: clientData } = await supabase
+      let clientNames: string[] = [];
+      if (clientIds.length > 0) {
+        const { data: clientsData } = await supabase
           .from('clients')
-          .select('name')
-          .eq('id', profile.client_id)
-          .single();
+          .select('id, name')
+          .in('id', clientIds);
         
-        clientName = clientData?.name;
+        clientNames = (clientsData || []).map(c => c.name);
+        clientName = clientNames[0];
       }
 
       return {
@@ -74,9 +85,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         userId: profile.user_id,
         name: profile.name,
         email: profile.email,
-        clientId: profile.client_id,
+        clientId: clientIds[0] || profile.client_id,
+        clientIds,
         role: (roleData?.role as AppRole) || 'client',
         clientName,
+        clientNames,
       };
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
