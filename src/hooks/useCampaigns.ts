@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClientSelector } from '@/contexts/ClientContext';
 
 export type Platform = 'meta' | 'google' | 'tiktok';
 export type CampaignStatus = 'active' | 'paused' | 'completed';
@@ -16,7 +17,6 @@ export interface Campaign {
   budget: number | null;
   created_at: string;
   updated_at: string;
-  // Calculated fields from metrics
   spend?: number;
   impressions?: number;
   clicks?: number;
@@ -64,23 +64,38 @@ interface DateRange {
   endDate: string;
 }
 
+// Helper to apply client filter to a query
+const applyClientFilter = <T extends { eq: (col: string, val: string) => T }>(
+  query: T,
+  clientId: string | null
+): T => {
+  if (clientId) {
+    return query.eq('client_id', clientId);
+  }
+  return query;
+};
+
 // Fetch campaigns with aggregated metrics
 export const useCampaigns = (dateRange?: DateRange) => {
   const { user } = useAuth();
-  
+  const { selectedClientId } = useClientSelector();
+
   return useQuery({
-    queryKey: ['campaigns', dateRange, user?.id],
+    queryKey: ['campaigns', dateRange, user?.id, selectedClientId],
     queryFn: async () => {
-      // First get campaigns
-      const { data: campaigns, error: campaignsError } = await supabase
+      let campaignsQuery = supabase
         .from('campaigns')
         .select('*')
         .order('created_at', { ascending: false });
 
+      if (selectedClientId) {
+        campaignsQuery = campaignsQuery.eq('client_id', selectedClientId);
+      }
+
+      const { data: campaigns, error: campaignsError } = await campaignsQuery;
       if (campaignsError) throw campaignsError;
       if (!campaigns || campaigns.length === 0) return [];
 
-      // Then get metrics for these campaigns
       let metricsQuery = supabase
         .from('daily_metrics')
         .select('*')
@@ -95,20 +110,13 @@ export const useCampaigns = (dateRange?: DateRange) => {
       const { data: metrics, error: metricsError } = await metricsQuery;
       if (metricsError) throw metricsError;
 
-      // Aggregate metrics per campaign
-      const campaignsWithMetrics = campaigns.map(campaign => {
+      return campaigns.map(campaign => {
         const campaignMetrics = metrics?.filter(m => m.campaign_id === campaign.id) || [];
-        
         const spend = campaignMetrics.reduce((sum, m) => sum + Number(m.spend), 0);
         const impressions = campaignMetrics.reduce((sum, m) => sum + m.impressions, 0);
         const clicks = campaignMetrics.reduce((sum, m) => sum + m.clicks, 0);
         const conversions = campaignMetrics.reduce((sum, m) => sum + m.conversions, 0);
         const leads = campaignMetrics.reduce((sum, m) => sum + m.leads, 0);
-        
-        const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-        const cpc = clicks > 0 ? spend / clicks : 0;
-        const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0;
-        const cpa = conversions > 0 ? spend / conversions : 0;
 
         return {
           ...campaign,
@@ -117,14 +125,12 @@ export const useCampaigns = (dateRange?: DateRange) => {
           clicks,
           conversions,
           leads,
-          ctr,
-          cpc,
-          cpm,
-          cpa,
+          ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+          cpc: clicks > 0 ? spend / clicks : 0,
+          cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
+          cpa: conversions > 0 ? spend / conversions : 0,
         } as Campaign;
       });
-
-      return campaignsWithMetrics;
     },
     enabled: !!user,
   });
@@ -133,14 +139,19 @@ export const useCampaigns = (dateRange?: DateRange) => {
 // Fetch daily metrics for charts
 export const useDailyMetrics = (dateRange?: DateRange) => {
   const { user } = useAuth();
-  
+  const { selectedClientId } = useClientSelector();
+
   return useQuery({
-    queryKey: ['daily_metrics', dateRange, user?.id],
+    queryKey: ['daily_metrics', dateRange, user?.id, selectedClientId],
     queryFn: async () => {
       let query = supabase
         .from('daily_metrics')
         .select('*')
         .order('date', { ascending: true });
+
+      if (selectedClientId) {
+        query = query.eq('client_id', selectedClientId);
+      }
 
       if (dateRange) {
         query = query
@@ -151,7 +162,6 @@ export const useDailyMetrics = (dateRange?: DateRange) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Aggregate by date
       const aggregatedByDate = (data || []).reduce((acc, metric) => {
         const existing = acc.find(m => m.date === metric.date);
         if (existing) {
@@ -180,20 +190,27 @@ export const useDailyMetrics = (dateRange?: DateRange) => {
 // Fetch platform summary
 export const usePlatformSummary = (dateRange?: DateRange) => {
   const { user } = useAuth();
-  
+  const { selectedClientId } = useClientSelector();
+
   return useQuery({
-    queryKey: ['platform_summary', dateRange, user?.id],
+    queryKey: ['platform_summary', dateRange, user?.id, selectedClientId],
     queryFn: async () => {
-      // Get campaigns to know which platform each metric belongs to
-      const { data: campaigns, error: campaignsError } = await supabase
+      let campaignsQuery = supabase
         .from('campaigns')
         .select('id, platform');
 
+      if (selectedClientId) {
+        campaignsQuery = campaignsQuery.eq('client_id', selectedClientId);
+      }
+
+      const { data: campaigns, error: campaignsError } = await campaignsQuery;
       if (campaignsError) throw campaignsError;
 
-      let metricsQuery = supabase
-        .from('daily_metrics')
-        .select('*');
+      let metricsQuery = supabase.from('daily_metrics').select('*');
+
+      if (selectedClientId) {
+        metricsQuery = metricsQuery.eq('client_id', selectedClientId);
+      }
 
       if (dateRange) {
         metricsQuery = metricsQuery
@@ -204,26 +221,18 @@ export const usePlatformSummary = (dateRange?: DateRange) => {
       const { data: metrics, error: metricsError } = await metricsQuery;
       if (metricsError) throw metricsError;
 
-      // Create campaign platform map
       const campaignPlatformMap = new Map(
         (campaigns || []).map(c => [c.id, c.platform as Platform])
       );
 
-      // Aggregate by platform
       const platformMap = new Map<Platform, PlatformSummary>();
-      
+
       (metrics || []).forEach(metric => {
         const platform = campaignPlatformMap.get(metric.campaign_id);
         if (!platform) return;
 
         const existing = platformMap.get(platform) || {
-          platform,
-          spend: 0,
-          impressions: 0,
-          clicks: 0,
-          conversions: 0,
-          leads: 0,
-          revenue: 0,
+          platform, spend: 0, impressions: 0, clicks: 0, conversions: 0, leads: 0, revenue: 0,
         };
 
         existing.spend += Number(metric.spend);
@@ -245,19 +254,29 @@ export const usePlatformSummary = (dateRange?: DateRange) => {
 // Fetch platform ROAS data
 export const usePlatformROAS = (dateRange?: DateRange) => {
   const { user } = useAuth();
-  
+  const { selectedClientId } = useClientSelector();
+
   return useQuery({
-    queryKey: ['platform_roas', dateRange, user?.id],
+    queryKey: ['platform_roas', dateRange, user?.id, selectedClientId],
     queryFn: async () => {
-      const { data: campaigns, error: campaignsError } = await supabase
+      let campaignsQuery = supabase
         .from('campaigns')
         .select('id, platform');
 
+      if (selectedClientId) {
+        campaignsQuery = campaignsQuery.eq('client_id', selectedClientId);
+      }
+
+      const { data: campaigns, error: campaignsError } = await campaignsQuery;
       if (campaignsError) throw campaignsError;
 
       let metricsQuery = supabase
         .from('daily_metrics')
         .select('campaign_id, spend, revenue');
+
+      if (selectedClientId) {
+        metricsQuery = metricsQuery.eq('client_id', selectedClientId);
+      }
 
       if (dateRange) {
         metricsQuery = metricsQuery
@@ -290,15 +309,13 @@ export const usePlatformROAS = (dateRange?: DateRange) => {
         platformData.set(platform, existing);
       });
 
-      const result: PlatformROAS[] = Array.from(platformData.entries()).map(([platform, data]) => ({
+      return Array.from(platformData.entries()).map(([platform, data]) => ({
         platform,
         platformName: platformNames[platform],
         spend: data.spend,
         revenue: data.revenue,
         roas: data.spend > 0 ? data.revenue / data.spend : 0,
       }));
-
-      return result;
     },
     enabled: !!user,
   });
@@ -312,7 +329,7 @@ export const calculateTotals = (platformSummary: PlatformSummary[]) => {
   const totalConversions = platformSummary.reduce((acc, p) => acc + p.conversions, 0);
   const totalLeads = platformSummary.reduce((acc, p) => acc + p.leads, 0);
   const totalRevenue = platformSummary.reduce((acc, p) => acc + p.revenue, 0);
-  
+
   return {
     spend: totalSpend,
     impressions: totalImpressions,
