@@ -226,9 +226,32 @@ export const DashboardLayout: React.FC = () => {
       <main className="lg:ml-72 pt-16 lg:pt-0 min-h-screen">
         {/* Top Bar */}
         <div className="hidden lg:flex h-16 items-center justify-between px-6 border-b border-border bg-card">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <RefreshCw size={14} />
-            <span>Última atualização: {getLastUpdate()}</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw size={14} />
+              <span>Última atualização: {getLastUpdate()}</span>
+            </div>
+            {clients.length > 1 && (
+              <Select
+                value={selectedClientId || '__all__'}
+                onValueChange={(val) => setSelectedClientId(val === '__all__' ? null : val)}
+              >
+                <SelectTrigger className="w-56">
+                  <Building2 size={14} className="mr-2 shrink-0" />
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {user?.role === 'admin' && (
+                    <SelectItem value="__all__">Todos os clientes</SelectItem>
+                  )}
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user?.name}</span>
