@@ -58,6 +58,7 @@ const bottomNavItems: NavItem[] = [
 
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { selectedClientId, setSelectedClientId, clients } = useClientSelector();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
