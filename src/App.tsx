@@ -99,7 +99,9 @@ const AppRoutes = () => {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <ClientProvider>
+              <DashboardLayout />
+            </ClientProvider>
           </ProtectedRoute>
         }
       >
