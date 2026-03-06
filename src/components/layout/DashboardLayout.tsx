@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClientSelector } from '@/contexts/ClientContext';
 import { 
   LayoutDashboard, 
   BarChart3, 
@@ -19,6 +20,13 @@ import {
 } from 'lucide-react';
 import { MetaIcon, GoogleIcon, TikTokIcon } from '@/components/icons/PlatformIcons';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { getLastUpdate } from '@/lib/mockData';
 
