@@ -114,12 +114,26 @@ export const DashboardLayout: React.FC = () => {
         {/* User Info */}
         <div className="px-6 py-4 border-b border-border">
           <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {user?.clientName || user?.email}
-          </p>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
             {user?.role === 'admin' ? 'Administrador' : 'Cliente'}
           </span>
+          {user?.clientNames && user.clientNames.length > 0 && (
+            <div className="mt-3 space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Clientes</p>
+              <div className="flex flex-wrap gap-1">
+                {user.clientNames.map((name) => (
+                  <span
+                    key={name}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground"
+                  >
+                    <Building2 size={12} className="mr-1 shrink-0" />
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
