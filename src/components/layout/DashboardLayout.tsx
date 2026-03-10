@@ -78,14 +78,39 @@ export const DashboardLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border h-16 flex items-center px-4">
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="p-2 hover:bg-muted rounded-lg transition-colors"
-        >
-          <Menu size={24} />
-        </button>
-        <div className="ml-4 font-semibold text-foreground">Portal de Resultados</div>
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border h-auto flex flex-col">
+        <div className="h-16 flex items-center px-4">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
+          >
+            <Menu size={24} />
+          </button>
+          <div className="ml-4 font-semibold text-foreground">Portal de Resultados</div>
+        </div>
+        {clients.length > 1 && (
+          <div className="px-4 pb-3">
+            <Select
+              value={selectedClientId || '__all__'}
+              onValueChange={(val) => setSelectedClientId(val === '__all__' ? null : val)}
+            >
+              <SelectTrigger className="w-full">
+                <Building2 size={14} className="mr-2 shrink-0" />
+                <SelectValue placeholder="Selecione o cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {user?.role === 'admin' && (
+                  <SelectItem value="__all__">Todos os clientes</SelectItem>
+                )}
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </header>
 
       {/* Mobile Sidebar Overlay */}
