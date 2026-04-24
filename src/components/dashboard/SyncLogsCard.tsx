@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, AlertCircle, Clock, RefreshCw, History, Zap, User } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, RefreshCw, History, Zap, User, ShieldOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -99,6 +99,7 @@ export const SyncLogsCard: React.FC<SyncLogsCardProps> = ({ clientId, limit = 10
         <div className="space-y-2">
           {logs.map((log) => {
             const isSuccess = log.status === 'success';
+            const isSkipped = log.status === 'skipped';
             const isAuto = log.sync_type === 'auto';
             return (
               <div
@@ -106,6 +107,8 @@ export const SyncLogsCard: React.FC<SyncLogsCardProps> = ({ clientId, limit = 10
                 className={`p-3 rounded-lg border text-sm ${
                   isSuccess
                     ? 'bg-green-500/5 border-green-500/20'
+                    : isSkipped
+                    ? 'bg-amber-500/5 border-amber-500/30'
                     : 'bg-destructive/5 border-destructive/20'
                 }`}
               >
@@ -113,6 +116,8 @@ export const SyncLogsCard: React.FC<SyncLogsCardProps> = ({ clientId, limit = 10
                   <div className="flex items-start gap-2 flex-1 min-w-0">
                     {isSuccess ? (
                       <CheckCircle size={16} className="text-green-500 mt-0.5 shrink-0" />
+                    ) : isSkipped ? (
+                      <ShieldOff size={16} className="text-amber-500 mt-0.5 shrink-0" />
                     ) : (
                       <AlertCircle size={16} className="text-destructive mt-0.5 shrink-0" />
                     )}
@@ -136,6 +141,11 @@ export const SyncLogsCard: React.FC<SyncLogsCardProps> = ({ clientId, limit = 10
                           {isAuto ? <Zap size={10} /> : <User size={10} />}
                           {isAuto ? 'Auto' : 'Manual'}
                         </span>
+                        {isSkipped && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            Pulada
+                          </span>
+                        )}
                       </div>
                       {isSuccess ? (
                         <p className="text-xs text-muted-foreground mt-1">
@@ -143,6 +153,10 @@ export const SyncLogsCard: React.FC<SyncLogsCardProps> = ({ clientId, limit = 10
                           {log.period_start && log.period_end && (
                             <> • {log.period_start} → {log.period_end}</>
                           )}
+                        </p>
+                      ) : isSkipped ? (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 break-words">
+                          {log.error_message || 'Sincronização bloqueada por token inválido.'}
                         </p>
                       ) : (
                         <p className="text-xs text-destructive mt-1 break-words">
