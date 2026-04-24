@@ -67,12 +67,14 @@ Deno.serve(async (req) => {
     let clientId: string | undefined
     let dateFrom: string | undefined
     let dateTo: string | undefined
+    let syncType: string = 'manual'
 
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}))
       clientId = body.client_id
       dateFrom = body.date_from
       dateTo = body.date_to
+      syncType = body.sync_type || 'manual'
     }
 
     if (!clientId) {
