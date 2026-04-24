@@ -33,6 +33,28 @@ export const MetaSyncCard: React.FC<MetaSyncCardProps> = ({ clientId }) => {
     setLastResult(null);
 
     try {
+      // Pre-flight: validate token before attempting full sync
+      const { data: validation, error: valError } = await supabase.functions.invoke(
+        'validate-meta-token',
+        { body: {} }
+      );
+
+      if (valError) {
+        throw new Error(valError.message || 'Falha ao validar token');
+      }
+
+      if (validation && validation.valid === false) {
+        const msg = validation.error || 'Token do Meta inválido';
+        setLastResult({ success: false, error: msg });
+        toast({
+          title: 'Token inválido',
+          description: msg,
+          variant: 'destructive',
+        });
+        setIsSyncing(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('sync-meta-ads', {
         body: {
           client_id: clientId,

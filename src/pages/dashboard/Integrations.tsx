@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetaSyncCard } from '@/components/dashboard/MetaSyncCard';
 import { SyncLogsCard } from '@/components/dashboard/SyncLogsCard';
+import { MetaTokenStatus } from '@/components/dashboard/MetaTokenStatus';
 import { useClientSelector } from '@/contexts/ClientContext';
 import { Plug } from 'lucide-react';
 
@@ -22,7 +23,10 @@ const Integrations: React.FC = () => {
       </div>
 
       {user?.clientId ? (
-        <MetaSyncCard clientId={user.clientId} />
+        <>
+          <MetaTokenStatus />
+          <MetaSyncCard clientId={user.clientId} />
+        </>
       ) : (
         <div className="bg-card border border-border rounded-xl p-6">
           <div className="flex items-center gap-3 text-muted-foreground">
