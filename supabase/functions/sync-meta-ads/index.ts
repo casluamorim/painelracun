@@ -62,12 +62,12 @@ Deno.serve(async (req) => {
   const supabaseLog = createClient(supabaseUrl, supabaseKey)
 
   try {
-    const META_ACCESS_TOKEN = Deno.env.get('META_ACCESS_TOKEN')
+    const META_ACCESS_TOKEN = Deno.env.get('META_ACCESS_TOKEN')?.trim()
     if (!META_ACCESS_TOKEN) {
       throw new Error('META_ACCESS_TOKEN não configurado')
     }
 
-    const META_AD_ACCOUNT_ID = Deno.env.get('META_AD_ACCOUNT_ID')
+    const META_AD_ACCOUNT_ID = Deno.env.get('META_AD_ACCOUNT_ID')?.trim()
     if (!META_AD_ACCOUNT_ID) {
       throw new Error('META_AD_ACCOUNT_ID não configurado')
     }
@@ -119,7 +119,14 @@ Deno.serve(async (req) => {
     
     if (!campaignsRes.ok) {
       const errorData = await campaignsRes.json()
-      throw new Error(`Meta API error (campaigns): ${JSON.stringify(errorData.error || errorData)}`)
+      const metaErr = errorData.error || errorData
+      // Friendlier message for the most common case: invalid/expired token
+      if (metaErr?.code === 190) {
+        throw new Error(
+          'Token do Meta inválido ou expirado. Atualize META_ACCESS_TOKEN nas configurações de segredos com um token válido (sem espaços ou quebras de linha).'
+        )
+      }
+      throw new Error(`Meta API error (campaigns): ${metaErr?.message || JSON.stringify(metaErr)}`)
     }
     
     const campaignsData = await campaignsRes.json()
