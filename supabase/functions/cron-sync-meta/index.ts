@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
             client_id: client.id,
             date_from: dateFrom,
             date_to: dateTo,
+            sync_type: 'auto',
           }),
         })
 
