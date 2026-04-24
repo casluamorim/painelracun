@@ -86,6 +86,9 @@ Deno.serve(async (req) => {
       syncType = body.sync_type || 'manual'
     }
 
+    logClientId = clientId
+    logSyncType = syncType
+
     if (!clientId) {
       throw new Error('client_id é obrigatório')
     }
@@ -100,6 +103,8 @@ Deno.serve(async (req) => {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       dateFrom = thirtyDaysAgo.toISOString().split('T')[0]
     }
+    logDateFrom = dateFrom
+    logDateTo = dateTo
 
     // Ensure account ID starts with act_
     const accountId = META_AD_ACCOUNT_ID.startsWith('act_') 
