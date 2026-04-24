@@ -239,6 +239,59 @@ export type Database = {
           },
         ]
       }
+      sync_logs: {
+        Row: {
+          campaigns_synced: number | null
+          client_id: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          metrics_synced: number | null
+          period_end: string | null
+          period_start: string | null
+          platform: Database["public"]["Enums"]["ad_platform"]
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          campaigns_synced?: number | null
+          client_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metrics_synced?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          platform: Database["public"]["Enums"]["ad_platform"]
+          status: string
+          sync_type?: string
+        }
+        Update: {
+          campaigns_synced?: number | null
+          client_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metrics_synced?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          platform?: Database["public"]["Enums"]["ad_platform"]
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_clients: {
         Row: {
           client_id: string

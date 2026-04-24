@@ -52,6 +52,15 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  const startedAt = Date.now()
+  let logClientId: string | undefined
+  let logDateFrom: string | undefined
+  let logDateTo: string | undefined
+  let logSyncType: string = 'manual'
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabaseLog = createClient(supabaseUrl, supabaseKey)
+
   try {
     const META_ACCESS_TOKEN = Deno.env.get('META_ACCESS_TOKEN')
     if (!META_ACCESS_TOKEN) {
@@ -67,13 +76,18 @@ Deno.serve(async (req) => {
     let clientId: string | undefined
     let dateFrom: string | undefined
     let dateTo: string | undefined
+    let syncType: string = 'manual'
 
     if (req.method === 'POST') {
       const body = await req.json().catch(() => ({}))
       clientId = body.client_id
       dateFrom = body.date_from
       dateTo = body.date_to
+      syncType = body.sync_type || 'manual'
     }
+
+    logClientId = clientId
+    logSyncType = syncType
 
     if (!clientId) {
       throw new Error('client_id é obrigatório')
@@ -89,6 +103,8 @@ Deno.serve(async (req) => {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       dateFrom = thirtyDaysAgo.toISOString().split('T')[0]
     }
+    logDateFrom = dateFrom
+    logDateTo = dateTo
 
     // Ensure account ID starts with act_
     const accountId = META_AD_ACCOUNT_ID.startsWith('act_') 
@@ -136,9 +152,7 @@ Deno.serve(async (req) => {
     }
 
     // 3. Upsert into Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = supabaseLog
 
     // Build campaign ID map (meta_id -> our_id)
     const campaignIdMap = new Map<string, string>()
@@ -279,6 +293,19 @@ Deno.serve(async (req) => {
 
     console.log('Sync complete:', result)
 
+    // Log success
+    await supabaseLog.from('sync_logs').insert({
+      client_id: logClientId,
+      platform: 'meta',
+      sync_type: logSyncType,
+      status: 'success',
+      period_start: logDateFrom,
+      period_end: logDateTo,
+      campaigns_synced: campaignsSynced,
+      metrics_synced: metricsSynced,
+      duration_ms: Date.now() - startedAt,
+    })
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -286,6 +313,19 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Sync error:', error)
     const message = error instanceof Error ? error.message : 'Unknown error'
+
+    // Log error
+    await supabaseLog.from('sync_logs').insert({
+      client_id: logClientId,
+      platform: 'meta',
+      sync_type: logSyncType,
+      status: 'error',
+      period_start: logDateFrom,
+      period_end: logDateTo,
+      error_message: message,
+      duration_ms: Date.now() - startedAt,
+    }).then(() => {}, () => {})
+
     return new Response(JSON.stringify({ success: false, error: message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
