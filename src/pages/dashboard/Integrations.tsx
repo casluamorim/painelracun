@@ -1,10 +1,16 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetaSyncCard } from '@/components/dashboard/MetaSyncCard';
+import { SyncLogsCard } from '@/components/dashboard/SyncLogsCard';
+import { useClientSelector } from '@/contexts/ClientContext';
 import { Plug } from 'lucide-react';
 
 const Integrations: React.FC = () => {
   const { user } = useAuth();
+  const { selectedClientId } = useClientSelector();
+  const isAdmin = user?.role === 'admin';
+  // Admin sees all logs when no client selected; clients see their own
+  const logsClientId = isAdmin ? (selectedClientId || undefined) : (user?.clientId || undefined);
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -25,6 +31,8 @@ const Integrations: React.FC = () => {
           </div>
         </div>
       )}
+
+      <SyncLogsCard clientId={logsClientId} limit={15} />
 
       {/* Placeholder for future integrations */}
       <div className="bg-card border border-border rounded-xl p-6 opacity-50">
