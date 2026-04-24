@@ -52,6 +52,15 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  const startedAt = Date.now()
+  let logClientId: string | undefined
+  let logDateFrom: string | undefined
+  let logDateTo: string | undefined
+  let logSyncType: string = 'manual'
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabaseLog = createClient(supabaseUrl, supabaseKey)
+
   try {
     const META_ACCESS_TOKEN = Deno.env.get('META_ACCESS_TOKEN')
     if (!META_ACCESS_TOKEN) {
