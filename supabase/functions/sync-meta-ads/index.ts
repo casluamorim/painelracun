@@ -152,9 +152,7 @@ Deno.serve(async (req) => {
     }
 
     // 3. Upsert into Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = supabaseLog
 
     // Build campaign ID map (meta_id -> our_id)
     const campaignIdMap = new Map<string, string>()
@@ -295,6 +293,19 @@ Deno.serve(async (req) => {
 
     console.log('Sync complete:', result)
 
+    // Log success
+    await supabaseLog.from('sync_logs').insert({
+      client_id: logClientId,
+      platform: 'meta',
+      sync_type: logSyncType,
+      status: 'success',
+      period_start: logDateFrom,
+      period_end: logDateTo,
+      campaigns_synced: campaignsSynced,
+      metrics_synced: metricsSynced,
+      duration_ms: Date.now() - startedAt,
+    })
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -302,6 +313,19 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Sync error:', error)
     const message = error instanceof Error ? error.message : 'Unknown error'
+
+    // Log error
+    await supabaseLog.from('sync_logs').insert({
+      client_id: logClientId,
+      platform: 'meta',
+      sync_type: logSyncType,
+      status: 'error',
+      period_start: logDateFrom,
+      period_end: logDateTo,
+      error_message: message,
+      duration_ms: Date.now() - startedAt,
+    }).then(() => {}, () => {})
+
     return new Response(JSON.stringify({ success: false, error: message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
